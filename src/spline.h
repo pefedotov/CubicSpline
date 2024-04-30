@@ -44,11 +44,6 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
 
-// unnamed namespace only because the implementation is in this
-// header file and we don't want to export symbols to the obj files
-namespace
-{
-
 namespace tk
 {
 
@@ -205,8 +200,8 @@ std::vector<double> solve_cubic(double a, double b, double c, double d,
 // spline implementation
 // -----------------------
 
-void spline::set_boundary(spline::bd_type left, double left_value,
-                          spline::bd_type right, double right_value)
+inline void spline::set_boundary(spline::bd_type left, double left_value,
+                                 spline::bd_type right, double right_value)
 {
     assert(m_x.size()==0);          // set_points() must not have happened yet
     m_left=left;
@@ -216,7 +211,7 @@ void spline::set_boundary(spline::bd_type left, double left_value,
 }
 
 
-void spline::set_coeffs_from_b()
+inline void spline::set_coeffs_from_b()
 {
     assert(m_x.size()==m_y.size());
     assert(m_x.size()==m_b.size());
@@ -239,9 +234,9 @@ void spline::set_coeffs_from_b()
     m_c0 = (m_left==first_deriv) ? 0.0 : m_c[0];
 }
 
-void spline::set_points(const std::vector<double>& x,
-                        const std::vector<double>& y,
-                        spline_type type)
+inline void spline::set_points(const std::vector<double>& x,
+                               const std::vector<double>& y,
+                               spline_type type)
 {
     assert(x.size()==y.size());
     if (type == linear)
@@ -417,7 +412,7 @@ void spline::set_points(const std::vector<double>& x,
     m_c0 = (m_left==first_deriv) ? 0.0 : m_c[0];
 }
 
-bool spline::make_monotonic()
+inline bool spline::make_monotonic()
 {
     assert(m_x.size()==m_y.size());
     assert(m_x.size()==m_b.size());
@@ -468,7 +463,7 @@ bool spline::make_monotonic()
 }
 
 // return the closest idx so that m_x[idx] <= x (return 0 if x<m_x[0])
-size_t spline::find_closest(double x) const
+inline size_t spline::find_closest(double x) const
 {
     std::vector<double>::const_iterator it;
     it=std::upper_bound(m_x.begin(),m_x.end(),x);       // *it > x
@@ -476,7 +471,7 @@ size_t spline::find_closest(double x) const
     return idx;
 }
 
-double spline::operator() (double x) const
+inline double spline::operator() (double x) const
 {
     // polynomial evaluation using Horner's scheme
     // TODO: consider more numerically accurate algorithms, e.g.:
@@ -501,7 +496,7 @@ double spline::operator() (double x) const
     return interpol;
 }
 
-double spline::deriv(int order, double x) const
+inline double spline::deriv(int order, double x) const
 {
     assert(order>0);
     size_t n=m_x.size();
@@ -555,7 +550,7 @@ double spline::deriv(int order, double x) const
     return interpol;
 }
 
-std::vector<double> spline::solve(double y, bool ignore_extrapolation) const
+inline std::vector<double> spline::solve(double y, bool ignore_extrapolation) const
 {
     std::vector<double> x;          // roots for the entire spline
     std::vector<double> root;       // roots for each piecewise cubic
@@ -624,11 +619,12 @@ namespace internal
 // band_matrix implementation
 // -------------------------
 
-band_matrix::band_matrix(int dim, int n_u, int n_l)
+inline band_matrix::band_matrix(int dim, int n_u, int n_l)
 {
     resize(dim, n_u, n_l);
 }
-void band_matrix::resize(int dim, int n_u, int n_l)
+
+inline void band_matrix::resize(int dim, int n_u, int n_l)
 {
     assert(dim>0);
     assert(n_u>=0);
@@ -642,7 +638,8 @@ void band_matrix::resize(int dim, int n_u, int n_l)
         m_lower[i].resize(dim);
     }
 }
-int band_matrix::dim() const
+
+inline int band_matrix::dim() const
 {
     if(m_upper.size()>0) {
         return m_upper[0].size();
@@ -654,7 +651,7 @@ int band_matrix::dim() const
 
 // defines the new operator (), so that we can access the elements
 // by A(i,j), index going from i=0,...,dim()-1
-double & band_matrix::operator () (int i, int j)
+inline double & band_matrix::operator () (int i, int j)
 {
     int k=j-i;       // what band is the entry
     assert( (i>=0) && (i<dim()) && (j>=0) && (j<dim()) );
@@ -663,7 +660,8 @@ double & band_matrix::operator () (int i, int j)
     if(k>=0)    return m_upper[k][i];
     else        return m_lower[-k][i];
 }
-double band_matrix::operator () (int i, int j) const
+
+inline double band_matrix::operator () (int i, int j) const
 {
     int k=j-i;       // what band is the entry
     assert( (i>=0) && (i<dim()) && (j>=0) && (j<dim()) );
@@ -673,19 +671,20 @@ double band_matrix::operator () (int i, int j) const
     else        return m_lower[-k][i];
 }
 // second diag (used in LU decomposition), saved in m_lower
-double band_matrix::saved_diag(int i) const
+inline double band_matrix::saved_diag(int i) const
 {
     assert( (i>=0) && (i<dim()) );
     return m_lower[0][i];
 }
-double & band_matrix::saved_diag(int i)
+
+inline double & band_matrix::saved_diag(int i)
 {
     assert( (i>=0) && (i<dim()) );
     return m_lower[0][i];
 }
 
 // LR-Decomposition of a band matrix
-void band_matrix::lu_decompose()
+inline void band_matrix::lu_decompose()
 {
     int  i_max,j_max;
     int  j_min;
@@ -720,7 +719,7 @@ void band_matrix::lu_decompose()
     }
 }
 // solves Ly=b
-std::vector<double> band_matrix::l_solve(const std::vector<double>& b) const
+inline std::vector<double> band_matrix::l_solve(const std::vector<double>& b) const
 {
     assert( this->dim()==(int)b.size() );
     std::vector<double> x(this->dim());
@@ -735,7 +734,7 @@ std::vector<double> band_matrix::l_solve(const std::vector<double>& b) const
     return x;
 }
 // solves Rx=y
-std::vector<double> band_matrix::r_solve(const std::vector<double>& b) const
+inline std::vector<double> band_matrix::r_solve(const std::vector<double>& b) const
 {
     assert( this->dim()==(int)b.size() );
     std::vector<double> x(this->dim());
@@ -750,8 +749,8 @@ std::vector<double> band_matrix::r_solve(const std::vector<double>& b) const
     return x;
 }
 
-std::vector<double> band_matrix::lu_solve(const std::vector<double>& b,
-        bool is_lu_decomposed)
+inline std::vector<double> band_matrix::lu_solve(const std::vector<double>& b,
+                                                 bool is_lu_decomposed)
 {
     assert( this->dim()==(int)b.size() );
     std::vector<double>  x,y;
@@ -764,14 +763,14 @@ std::vector<double> band_matrix::lu_solve(const std::vector<double>& b,
 }
 
 // machine precision of a double, i.e. the successor of 1 is 1+eps
-double get_eps()
+inline double get_eps()
 {
     //return std::numeric_limits<double>::epsilon();    // __DBL_EPSILON__
     return 2.2204460492503131e-16;                      // 2^-52
 }
 
 // solutions for a + b*x = 0
-std::vector<double> solve_linear(double a, double b)
+inline std::vector<double> solve_linear(double a, double b)
 {
     std::vector<double> x;      // roots
     if(b==0.0) {
@@ -792,8 +791,8 @@ std::vector<double> solve_linear(double a, double b)
 }
 
 // solutions for a + b*x + c*x^2 = 0
-std::vector<double> solve_quadratic(double a, double b, double c,
-                                    int newton_iter=0)
+inline std::vector<double> solve_quadratic(double a, double b, double c,
+                                           int newton_iter=0)
 {
     if(c==0.0) {
         return solve_linear(a,b);
@@ -841,8 +840,8 @@ std::vector<double> solve_quadratic(double a, double b, double c,
 // see also
 //   gsl: gsl_poly_solve_cubic() in solve_cubic.c
 //   octave: roots.m - via eigenvalues of the Frobenius companion matrix
-std::vector<double> solve_cubic(double a, double b, double c, double d,
-                                int newton_iter)
+inline std::vector<double> solve_cubic(double a, double b, double c, double d,
+                                       int newton_iter)
 {
     if(d==0.0) {
         return solve_quadratic(a,b,c,newton_iter);
@@ -941,9 +940,6 @@ std::vector<double> solve_cubic(double a, double b, double c, double d,
 
 
 } // namespace tk
-
-
-} // namespace
 
 #pragma GCC diagnostic pop
 
